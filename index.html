@@ -260,6 +260,12 @@ html,body{opacity:1!important;visibility:visible!important}
   -webkit-animation: lumiCleanVideoEntrance 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Força ocultar o botão de play nativo no iOS (especialmente no Modo Pouca Energia) */
+.lumi-hero-video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none !important;
+}
+
 @keyframes lumiCleanVideoEntrance {
   0% {
     opacity: 0;
@@ -560,7 +566,17 @@ html,body{opacity:1!important;visibility:visible!important}
           var playPromise = vid.play();
           if (playPromise !== undefined) {
             playPromise.catch(function(error) {
-              console.log("Autoplay bloqueado pelo navegador.");
+              console.log("Autoplay bloqueado pelo navegador. Aguardando interação...");
+              // Fallback: Toca assim que o usuário rolar a tela ou tocar em qualquer lugar
+              var startVideo = function() {
+                vid.play();
+                window.removeEventListener('touchstart', startVideo);
+                window.removeEventListener('click', startVideo);
+                window.removeEventListener('scroll', startVideo);
+              };
+              window.addEventListener('touchstart', startVideo, { once: true });
+              window.addEventListener('click', startVideo, { once: true });
+              window.addEventListener('scroll', startVideo, { once: true });
             });
           }
         }, 150);
