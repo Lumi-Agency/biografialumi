@@ -254,6 +254,8 @@ html,body{opacity:1!important;visibility:visible!important}
 
   /* Fade-in Limpo (Sem blur para não travar em alguns navegadores/mobile) */
   opacity: 0;
+}
+.lumi-hero-video.video-loaded {
   animation: lumiCleanVideoEntrance 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   -webkit-animation: lumiCleanVideoEntrance 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -530,10 +532,41 @@ html,body{opacity:1!important;visibility:visible!important}
 <!-- ── HERO SECTION ── -->
 <section class="lumi-hero" id="fundo-revelar">
   <!-- DESKTOP BACKGROUND VIDEO -->
-  <video class="lumi-hero-video lumi-hero-video--desktop" src="assets/grok-video-c4a249c1-bec6-4bab-896b-d1ce3e8cc478.mp4" autoplay loop muted playsinline></video>
+  <video class="lumi-hero-video lumi-hero-video--desktop" src="assets/grok-video-c4a249c1-bec6-4bab-896b-d1ce3e8cc478.mp4" autoplay loop muted playsinline preload="auto"></video>
   
   <!-- MOBILE BACKGROUND VIDEO -->
-  <video class="lumi-hero-video lumi-hero-video--mobile" src="assets/lollile.mp4" autoplay loop muted playsinline></video>
+  <video class="lumi-hero-video lumi-hero-video--mobile" src="assets/lollile.mp4" autoplay loop muted playsinline preload="auto"></video>
+
+  <!-- AUTOPLAY E SINCRONIA FIX PARA IOS/MOBILE -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var videos = document.querySelectorAll('.lumi-hero-video');
+      videos.forEach(function(vid) {
+        // Força configurações para o iOS ignorar restrições de autoplay
+        vid.muted = true;
+        vid.defaultMuted = true;
+        vid.setAttribute('playsinline', 'playsinline');
+        
+        // Sincroniza a animação de entrada só quando o vídeo estiver carregado e pronto
+        vid.addEventListener('canplay', function() {
+          vid.classList.add('video-loaded');
+        });
+        if (vid.readyState >= 3) {
+          vid.classList.add('video-loaded');
+        }
+        
+        // Tenta forçar o play para evitar o botão de play nativo no mobile
+        setTimeout(function() {
+          var playPromise = vid.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(function(error) {
+              console.log("Autoplay bloqueado pelo navegador.");
+            });
+          }
+        }, 150);
+      });
+    });
+  </script>
 
   <!-- SCROLL HINT -->
   <div class="lumi-scroll-hint">
