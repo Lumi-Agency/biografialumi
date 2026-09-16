@@ -533,7 +533,7 @@ html,body{opacity:1!important;visibility:visible!important}
   <video class="lumi-hero-video lumi-hero-video--desktop" src="assets/grok-video-c4a249c1-bec6-4bab-896b-d1ce3e8cc478.mp4" autoplay loop muted playsinline></video>
   
   <!-- MOBILE BACKGROUND VIDEO -->
-  <video class="lumi-hero-video lumi-hero-video--mobile" src="assets/mobile.mp4" autoplay loop muted playsinline></video>
+  <video class="lumi-hero-video lumi-hero-video--mobile" src="assets/lollile.mp4" autoplay loop muted playsinline></video>
 
   <!-- SCROLL HINT -->
   <div class="lumi-scroll-hint">
@@ -673,95 +673,130 @@ document.addEventListener('mouseup', function() {
     canvas: null,
     context: null,
     circleArray: [],
-    colorArray: ['#FF4D4D', '#990000', '#990000', '#1f2e37', '#FF4D4D', '#542619', '#990000', '#FF4D4D', '#4A0000', '#FF4D4D'],
-    mouseDistance: 50,
-    radius: .5,
-    maxRadius: 1.5,
-    mouse: { x: undefined, y: undefined, down: false, move: false },
-
+    colorArray: ['#ff0000', '#ff1a1a', '#e60000', '#cc0000', '#ff3333'],
+    mouseDistance: 100,
+    mouse: { x: undefined, y: undefined },
+    
     init: function () {
       this.canvas = document.getElementById('stars');
       this.canvas.width = window.innerWidth;
       this.canvas.height = window.innerHeight;
       this.canvas.style.display = 'block';
       this.context = this.canvas.getContext('2d');
-
-      window.addEventListener('mousemove', this.mouseMove);
-      window.addEventListener('resize', this.resize);
+      
+      window.addEventListener('mousemove', this.mouseMove.bind(this));
+      window.addEventListener('resize', this.resize.bind(this));
       this.prepare();
       this.animate();
     },
-
-    Circle: function (x, y, dx, dy, radius, fill) {
+    
+    Circle: function (x, y, radius, fill) {
       this.x = x;
       this.y = y;
-      this.dx = dx;
-      this.dy = dy;
+      this.baseX = x;
       this.radius = radius;
-      this.minRadius = this.radius;
-
+      this.fill = fill;
+      this.speedY = -(Math.random() * 1.5 + 0.5);
+      this.wobbleSpeed = Math.random() * 0.02 + 0.01;
+      this.wobbleDistance = Math.random() * 20 + 10;
+      this.angle = Math.random() * Math.PI * 2;
+      this.life = 0;
+      this.maxLife = Math.random() * 200 + 100;
+      this.opacity = 0;
+      
       this.draw = function () {
+        Stars.context.save();
+        Stars.context.globalAlpha = this.opacity;
         Stars.context.beginPath();
         Stars.context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        Stars.context.fillStyle = fill;
+        Stars.context.fillStyle = this.fill;
+        Stars.context.shadowBlur = this.radius * 4;
+        Stars.context.shadowColor = this.fill;
         Stars.context.fill();
+        Stars.context.restore();
       };
-
+      
       this.update = function () {
-        if (this.x + this.radius > Stars.canvas.width || this.x - this.radius < 0) this.dx = -this.dx;
-        if (this.y + this.radius > Stars.canvas.height || this.y - this.radius < 0) this.dy = -this.dy;
-
-        this.x += this.dx;
-        this.y += this.dy;
-
-        if (
-          Stars.mouse.x - this.x < Stars.mouseDistance &&
-          Stars.mouse.x - this.x > -Stars.mouseDistance &&
-          Stars.mouse.y - this.y < Stars.mouseDistance &&
-          Stars.mouse.y - this.y > -Stars.mouseDistance
-        ) {
-          if (this.radius < Stars.maxRadius) this.radius += 1;
-        } else if (this.radius > this.minRadius) {
-          this.radius -= 1;
+        this.life++;
+        
+        if (this.life < 50) {
+          this.opacity = this.life / 50;
+        } else if (this.life > this.maxLife - 50) {
+          this.opacity = (this.maxLife - this.life) / 50;
+        } else {
+          this.opacity = 1;
         }
-
+        
+        this.y += this.speedY;
+        this.angle += this.wobbleSpeed;
+        this.x = this.baseX + Math.sin(this.angle) * this.wobbleDistance;
+        
+        if (Stars.mouse.x !== undefined) {
+          var dx = Stars.mouse.x - this.x;
+          var dy = Stars.mouse.y - this.y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < Stars.mouseDistance) {
+            this.x -= dx * 0.05;
+            this.baseX -= dx * 0.05;
+            this.y -= dy * 0.05;
+          }
+        }
+        
+        if (this.life >= this.maxLife || this.y < -10) {
+          this.reset();
+        }
+        
         this.draw();
       };
+      
+      this.reset = function() {
+        this.y = Stars.canvas.height + 10;
+        this.baseX = Math.random() * Stars.canvas.width;
+        this.x = this.baseX;
+        this.life = 0;
+        this.maxLife = Math.random() * 200 + 100;
+        this.speedY = -(Math.random() * 1.5 + 0.5);
+      };
     },
-
+    
     prepare: function () {
       this.circleArray = [];
-      for (var i = 0; i < 1200; i++) {
-        var radius = Stars.radius;
-        var x = Math.random() * (this.canvas.width - radius * 2) + radius;
-        var y = Math.random() * (this.canvas.height - radius * 2) + radius;
-        var dx = (Math.random() - 0.5) * 1.5;
-        var dy = (Math.random() - 1) * 1.5;
+      var isMobile = window.innerWidth < 768;
+      var numStars = isMobile ? 350 : 600; 
+      
+      for (var i = 0; i < numStars; i++) {
+        var radius = Math.random() * (isMobile ? 2.5 : 1.5) + 0.5;
+        var x = Math.random() * this.canvas.width;
+        var y = Math.random() * this.canvas.height;
         var fill = this.colorArray[Math.floor(Math.random() * this.colorArray.length)];
-        this.circleArray.push(new this.Circle(x, y, dx, dy, radius, fill));
+        
+        var circle = new this.Circle(x, y, radius, fill);
+        circle.life = Math.random() * circle.maxLife;
+        this.circleArray.push(circle);
       }
     },
-
+    
     animate: function () {
-      requestAnimationFrame(Stars.animate);
+      requestAnimationFrame(Stars.animate.bind(Stars));
       Stars.context.clearRect(0, 0, Stars.canvas.width, Stars.canvas.height);
+      
       for (var i = 0; i < Stars.circleArray.length; i++) {
-        var circle = Stars.circleArray[i];
-        circle.update();
+        Stars.circleArray[i].update();
       }
     },
-
+    
     mouseMove: function (event) {
-      Stars.mouse.x = event.x;
-      Stars.mouse.y = event.y;
+      this.mouse.x = event.x;
+      this.mouse.y = event.y;
     },
-
+    
     resize: function () {
-      Stars.canvas.width = window.innerWidth;
-      Stars.canvas.height = window.innerHeight;
+      this.canvas.width = window.innerWidth;
+      this.canvas.height = window.innerHeight;
+      this.prepare(); 
     }
   };
-
+  
   $(document).ready(function () {
     Stars.init();
   });
